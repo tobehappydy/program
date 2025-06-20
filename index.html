@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Advanced Medical Image Processor + DTI</title>
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+        /* ———————————  BRAND COLOURS  ——————————— */
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #1abc9c;
+            --light: #ecf0f1;
+            --dark: #34495e;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e65534;
+            --purple: #9b59b6;
+            --dark-blue: #1a2a4c;
+        }
+        /* ———————————  RESET  ——————————— */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--dark-blue) 0%, var(--primary) 100%);
+            color: var(--light);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        /* ———————————  LAYOUT  ——————————— */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            color: var(--light);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        .panel {
+            background: rgba(44, 62, 80, 0.7);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .panel-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        /* ———————————  UPLOAD  ——————————— */
+        .upload-container {
+            border: 2px dashed rgba(236, 240, 241, 0.3);
+            border-radius: 8px;
+            padding: 30px 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        .upload-container:hover {
+            border-color: var(--accent);
+            background: rgba(26, 188, 156, 0.1);
+        }
+        .upload-container.drag-over {
+            background: rgba(26, 188, 156, 0.2);
+            border-color: var(--accent);
+        }
+        input[type="file"] {
+            display: none;
+        }
+        /* ———————————  BUTTONS  ——————————— */
+        .btn {
+            background: var(--secondary);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 8px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
+        .btn.smooth {
+            background: var(--purple);
+        }
+        .btn.segment {
+            background: var(--success);
+        }
+        .btn.denoise {
+            background: var(--warning);
+        }
+        .btn.ascm {
+            background: var(--danger);
+        }
+        .btn.enhance {
+            background: var(--accent);
+        }
+        .btn.sharpen {
+            background: var(--secondary);
+        }
+        .btn.erosion {
+            background: var(--danger);
+        }
+        .btn.dilation {
+            background: #2ecc71;
+        }
+        .btn.advanced {
+            background: #34495e;
+        }
+        /* special for DTI */
+        .btn.dti {
+            background: #16a085;
+        }
+        .btn.dti:hover {
+            background: #13856e;
+        }
+        #file-name {
+            margin-top: 15px;
+            font-size: 1.1rem;
+            color: var(--accent);
+            word-break: break-all;
+        }
+        .processing-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            margin: 25px 0;
+        }
+        /* ———————————  STATUS  ——————————— */
+        .status {
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        .error {
+            background: rgba(231, 76, 60, 0.2);
+            border: 1px solid var(--danger);
+            color: #ffb8b8;
+        }
+        .success {
+            background: rgba(39, 174, 96, 0.2);
+            border: 1px solid var(--success);
+            color: #a0f0c0;
+        }
+        .processing {
+            background: rgba(52, 152, 219, 0.2);
+            border: 1px solid var(--secondary);
+            color: #b3e0ff;
+        }
+        /* ———————————  IMAGE PREVIEW  ——————————— */
+        .preview-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .image-box {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+        }
+        .image-box h3 {
+            margin-bottom: 10px;
+            color: var(--accent);
+        }
+        #result-image {
+            max-width: 100%;
+            border-radius: 6px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(45deg, var(--primary), var(--dark-blue));
+        }
+        .image-placeholder {
+            width: 100%;
+            height: 600px; /* Increased from 300px to 600px */
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 1.1rem;
+        }
+        /* ———————————  DTI  ——————————— */
+        #dti-inputs {
+            margin-top: 20px;
+            background: rgba(0, 0, 0, 0.15);
+            padding: 20px;
+            border-radius: 10px;
+        }
+        #dti-inputs h3 {
+            margin-bottom: 15px;
+            color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-brain"></i> Medical Image Processor</h1>
+            <p class="subtitle">
+                Advanced processing and analysis of medical imaging data — now with
+                <strong>DTI reconstruction</strong>
+            </p>
+        </header>
+
+        <!-- ————————   MAIN CONTENT   ———————— -->
+        <div class="main-content">
+            <!-- ————————   LEFT: UPLOAD & PROCESS   ———————— -->
+            <div class="panel">
+                <h2 class="panel-title"><i class="fas fa-file-upload"></i> Upload &amp; Process</h2>
+
+                <!-- 1. Upload DWI NIfTI -->
+                <div class="upload-container" id="drop-zone">
+                    <i
+                        class="fas fa-cloud-upload-alt"
+                        style="font-size: 3rem; margin-bottom: 15px; color: var(--accent);"
+                    ></i>
+                    <h3>Upload DWI NIfTI File</h3>
+                    <p>Drag &amp; drop your file here or click the button below</p>
+                    <input type="file" id="file-input" accept=".nii,.nii.gz" />
+                    <button class="btn" onclick="document.getElementById('file-input').click()">
+                        <i class="fas fa-folder-open"></i> Choose File
+                    </button>
+                    <p id="file-name">No file selected</p>
+                </div>
+
+                <!-- 2. Processing options -->
+                <div id="processing-section">
+                    <h3>Processing Options</h3>
+                    <div class="processing-options">
+                        <button id="segmenttissue-btn" class="btn smooth">
+                            <i class="fas fa-layer-group"></i> Segment Tissue
+                        </button>
+                        <button id="segment-btn" class="btn segment">
+                            <i class="fas fa-shapes"></i> Segment Brain
+                        </button>
+                        <button id="denoise-btn" class="btn denoise">
+                            <i class="fas fa-wind"></i> Denoise NLMEANS
+                        </button>
+                        <button id="denoiseASCM-btn" class="btn ascm">
+                            <i class="fas fa-filter"></i> Denoise ASCM
+                        </button>
+                        <button id="enhance-btn" class="btn enhance">
+                            <i class="fas fa-magic"></i> Enhance Image
+                        </button>
+                        <button id="sharpen-btn" class="btn sharpen">
+                            <i class="fas fa-cut"></i> Sharpen Image
+                        </button>
+                        <button id="erosion-btn" class="btn erosion">
+                            <i class="fas fa-compress-alt"></i> Erode Mask
+                        </button>
+                        <button id="dilation-btn" class="btn dilation">
+                            <i class="fas fa-expand-alt"></i> Dilate Mask
+                        </button>
+
+                        <!-- ——— NEW —DTI———————— -->
+                        <button id="dti-btn" class="btn dti">
+                            <i class="fas fa-dna"></i> DTI Reconstruction
+                        </button>
+                    </div>
+
+                    <!-- Smoothing slider -->
+                    <div class="param-control" id="smooth-params">
+                        <label for="sigma-slider"
+                            >Smoothing Intensity (σ):
+                            <span id="sigma-value" class="value-display">1.0</span></label
+                        >
+                        <div class="slider-container">
+                            <input
+                                type="range"
+                                id="sigma-slider"
+                                min="0.1"
+                                max="5"
+                                step="0.1"
+                                value="1.0"
+                            />
+                        </div>
+                        <p style="margin-top: 10px; font-size: 0.9rem; opacity: 0.8">
+                            Higher values create more smoothing but may reduce detail
+                        </p>
+                    </div>
+
+                    <!-- Advanced toggle -->
+                    <button id="advanced-btn" class="btn advanced" style="margin-top: 15px">
+                        <i class="fas fa-cog"></i> Advanced Options
+                    </button>
+
+                    <!-- Advanced options pane -->
+                    <div class="advanced-options" id="advanced-options" style="display: none">
+                        <h3><i class="fas fa-microscope"></i> Advanced Processing</h3>
+                        <div class="param-control">
+                            <label for="wavelet-type">Wavelet Type:</label>
+                            <select id="wavelet-type">
+                                <option value="haar">Haar</option>
+                                <option value="db2">Daubechies 2</option>
+                                <option value="coif1">Coiflet 1</option>
+                                <option value="bior1.3">Biorthogonal 1.3</option>
+                            </select>
+                        </div>
+                        <div class="param-control">
+                            <label for="wavelet-level">Wavelet Level:</label>
+                            <div class="input-container">
+                                <input
+                                    type="number"
+                                    id="wavelet-level"
+                                    min="1"
+                                    max="5"
+                                    value="1"
+                                    style="flex: 1"
+                                />
+                            </div>
+                        </div>
+                        <div class="processing-options">
+                            <button id="wavelet-btn" class="btn smooth">
+                                <i class="fas fa-wave-square"></i> Wavelet Transform
+                            </button>
+                            <button id="gaussian-btn" class="btn smooth">
+                                <i class="fas fa-wind"></i> Gaussian Smooth
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ——— NEW —DTI inputs ———————— -->
+                    <div id="dti-inputs" style="display: none">
+                        <h3><i class="fas fa-file-medical"></i> Provide .bvec and .bval</h3>
+                        <div class="upload-container" id="bvec-zone">
+                            <i
+                                class="fas fa-file-upload"
+                                style="font-size: 2rem; margin-bottom: 10px; color: var(--accent)"
+                            ></i>
+                            <h4>.bvec File</h4>
+                            <input type="file" id="bvec-input" accept=".bvec" />
+                            <button
+                                class="btn"
+                                onclick="document.getElementById('bvec-input').click()"
+                            >
+                                <i class="fas fa-folder-open"></i> Choose .bvec
+                            </button>
+                            <p id="bvec-name" style="margin-top: 10px">No file selected</p>
+                        </div>
+                        <div class="upload-container" id="bval-zone">
+                            <i
+                                class="fas fa-file-upload"
+                                style="font-size: 2rem; margin-bottom: 10px; color: var(--accent)"
+                            ></i>
+                            <h4>.bval File</h4>
+                            <input type="file" id="bval-input" accept=".bval" />
+                            <button
+                                class="btn"
+                                onclick="document.getElementById('bval-input').click()"
+                            >
+                                <i class="fas fa-folder-open"></i> Choose .bval
+                            </button>
+                            <p id="bval-name" style="margin-top: 10px">No file selected</p>
+                        </div>
+                        <button id="run-dti-btn" class="btn dti" style="margin-top: 15px">
+                            <i class="fas fa-play"></i> Run DTI Reconstruction
+                        </button>
+                    </div>
+
+                    <div id="status" class="status">Ready to process medical images</div>
+                </div>
+            </div>
+
+            <!-- ————————   RIGHT: PREVIEW   ———————— -->
+            <div class="panel">
+                <h2 class="panel-title"><i class="fas fa-image"></i> Results &amp; Preview</h2>
+                <div class="preview-container">
+                    <div class="image-box">
+                        <h3><i class="fas fa-file-medical-alt"></i> Result</h3>
+                        <div id="result-container">
+                            <div class="image-placeholder">
+                                <i class="fas fa-image"></i> Result will appear here
+                            </div>
+                        </div>
+                    </div>
+                    <div class="controls" style="margin-top: 20px;">
+                        <button id="view-slices-btn" class="btn">
+                            <i class="fas fa-th-large"></i> View All Slices
+                        </button>
+                        <button id="download-btn" class="btn" style="background: var(--accent)">
+                            <i class="fas fa-download"></i> Download Result
+                        </button>
+                        <button id="reset-btn" class="btn" style="background: var(--dark)">
+                            <i class="fas fa-redo"></i> Reset
+                        </button>
+                    </div>
+                    <div
+                        id="result-info"
+                        style="margin-top: 20px; background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 8px"
+                    >
+                        <h4><i class="fas fa-info-circle"></i> Processing Information</h4>
+                        <p>No processing information available yet.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ————————  INFO PANEL  ———————— -->
+        <div class="panel">
+            <h2 class="panel-title"><i class="fas fa-info-circle"></i> About Medical Image Processing</h2>
+            <div class="features">
+                <div class="feature-card">
+            <h4><i class="fas fa-filter"></i> Gaussian Smoothing</h4>
+            <p>
+                Applies Gaussian kernel to reduce noise while preserving anatomical structures in 3D/4D medical volumes.
+            </p>
+        </div>
+        <div class="feature-card">
+            <h4><i class="fas fa-wave-square"></i> Wavelet Transform</h4>
+            <p>
+                Performs 3D wavelet decomposition for multi-scale analysis of brain structures and lesion detection.
+            </p>
+        </div>
+
+        <!-- 新增功能 -->
+        <div class="feature-card">
+            <h4><i class="fas fa-brain"></i> Segment Tissue</h4>
+            <p>
+                Classifies voxels into tissue types (GM/WM/CSF) using adaptive thresholding for quantitative analysis.
+            </p>
+        </div>
+        <div class="feature-card">
+            <h4><i class="fas fa-skull"></i> Segment Brain</h4>
+            <p>
+                Extracts brain parenchyma from skull and scalp using hybrid edge detection and morphological operations.
+            </p>
+        </div>
+        <div class="feature-card">
+            <h4><i class="fas fa-broom"></i> Denoise NLMEANS</h4>
+            <p>
+                Non-local means algorithm for Rician noise suppression in MRI while preserving fine structural details.
+            </p>
+        </div>
+        <div class="feature-card">
+            <h4><i class="fas fa-robot"></i> Denoise ASCM</h4>
+            <p>
+                Adaptive Soft Coefficient Matching combines multiple denoising results for optimal SNR improvement.
+            </p>
+        </div>
+        <div class="feature-card">
+            <h4><i class="fas fa-sun"></i> Enhance Image</h4>
+            <p>
+                Improves contrast through histogram equalization optimized for medical imaging dynamic ranges.
+            </p>
+        </div>
+        <div class="feature-card">
+            <h4><i class="fas fa-magic"></i> Sharpen Image</h4>
+            <p>
+                Laplacian-based edge enhancement to compensate for partial volume effects in high-resolution MRI.
+            </p>
+        </div>
+        <div class="feature-card">
+            <h4><i class="fas fa-compress-alt"></i> Erode Mask</h4>
+            <p>
+                Refines segmentation boundaries by removing peripheral voxels using 3D morphological erosion.
+            </p>
+        </div>
+        <div class="feature-card">
+            <h4><i class="fas fa-expand-alt"></i> Dilate Mask</h4>
+            <p>
+                Expands regions of interest to ensure complete coverage of target anatomies in 3D space.
+            </p>
+        </div>
+
+        <div class="feature-card">
+            <h4><i class="fas fa-network-wired"></i> DTI Reconstruction</h4>
+            <p>
+                Computes diffusion tensor metrics (FA, MD) from DWI data using DIPY's <code>TensorModel</code>.
+            </p>
+                </div>
+            </div>
+        </div>
+        <footer>
+            <p>
+                Medical Image Processor v3.1 — powered by DIPY, SciPy &amp; NumPy — for research and educational
+                purposes only.
+            </p>
+        </footer>
+    </div>
+
+    <!-- ———————————  SCRIPT  ——————————— -->
+    <script>
+        /* ============  DOM ELEMENTS  ============ */
+        const fileInput = document.getElementById("file-input");
+        const dropZone = document.getElementById("drop-zone");
+        const fileNameDisplay = document.getElementById("file-name");
+        const statusDiv = document.getElementById("status");
+        const sigmaSlider = document.getElementById("sigma-slider");
+        const sigmaValue = document.getElementById("sigma-value");
+        const resultContainer = document.getElementById("result-container");
+        const resultInfo = document.getElementById("result-info");
+        const advancedOptions = document.getElementById("advanced-options");
+        const dtiInputs = document.getElementById("dti-inputs");
+        const bvecInput = document.getElementById("bvec-input");
+        const bvalInput = document.getElementById("bval-input");
+        const bvecName = document.getElementById("bvec-name");
+        const bvalName = document.getElementById("bval-name");
+
+        /* ============  BUTTONS  ============ */
+        const segmentTissueBtn = document.getElementById("segmenttissue-btn");
+        const segmentBtn = document.getElementById("segment-btn");
+        const denoiseBtn = document.getElementById("denoise-btn");
+        const enhanceBtn = document.getElementById("enhance-btn");
+        const sharpenBtn = document.getElementById("sharpen-btn");
+        const erosionBtn = document.getElementById("erosion-btn");
+        const dilationBtn = document.getElementById("dilation-btn");
+        const denoiseASCMBtn = document.getElementById("denoiseASCM-btn");
+        const waveletBtn = document.getElementById("wavelet-btn");
+        const gaussianBtn = document.getElementById("gaussian-btn");
+        const advancedBtn = document.getElementById("advanced-btn");
+        const viewSlicesBtn = document.getElementById("view-slices-btn");
+        const downloadBtn = document.getElementById("download-btn");
+        const resetBtn = document.getElementById("reset-btn");
+        const dtiBtn = document.getElementById("dti-btn");
+        const runDtiBtn = document.getElementById("run-dti-btn");
+
+        /* ============  STATE  ============ */
+        let currentFile = null; // DWI file
+        let currentFilePath = null; // server-side path of DWI (returned by /upload)
+        let processedImageUrl = null;
+        let currentProcess = "";
+        let currentResultDir = null;
+        let outputFiles = {};
+        let bvecFile = null;
+        let bvalFile = null;
+
+        /* ============  INIT  ============ */
+        document.addEventListener("DOMContentLoaded", () => {
+            updateSigmaValue();
+            setupEventListeners();
+        });
+
+        /* ============  HELPERS  ============ */
+        function showStatus(message, type) {
+            statusDiv.textContent = message;
+            statusDiv.className = "status";
+            if (type === "error") statusDiv.classList.add("error");
+            if (type === "success") statusDiv.classList.add("success");
+            if (type === "processing") statusDiv.classList.add("processing");
+        }
+        function updateSigmaValue() {
+            sigmaValue.textContent = sigmaSlider.value;
+        }
+
+        /* ============  EVENT LISTENERS  ============ */
+        function setupEventListeners() {
+            /* Upload NIfTI */
+            fileInput.addEventListener("change", handleFileSelect);
+            dropZone.addEventListener("dragover", (e) => {
+                e.preventDefault();
+                dropZone.classList.add("drag-over");
+            });
+            dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
+            dropZone.addEventListener("drop", (e) => {
+                e.preventDefault();
+                dropZone.classList.remove("drag-over");
+                if (e.dataTransfer.files.length) {
+                    fileInput.files = e.dataTransfer.files;
+                    handleFileSelect({ target: fileInput });
+                }
+            });
+
+            /* Processing buttons */
+            segmentTissueBtn.addEventListener("click", () => {
+                currentProcess = "Tissue Segmentation";
+                processImage("tissue_segmentation");   // 仅此一参
+            });
+
+            segmentBtn.addEventListener("click", () => {
+                currentProcess = "Segmentation";
+                processImage("segment");
+            });
+            denoiseBtn.addEventListener("click", () => {
+                currentProcess = "Denoising";
+                processImage("denoise");
+            });
+            enhanceBtn.addEventListener("click", () => {
+                currentProcess = "Enhancement";
+                processImage("enhance");
+            });
+            sharpenBtn.addEventListener("click", () => {
+                currentProcess = "Sharpening";
+                processImage("sharpen");
+            });
+            erosionBtn.addEventListener("click", () => {
+                currentProcess = "Erosion";
+                processImage("erosion");
+            });
+            dilationBtn.addEventListener("click", () => {
+                currentProcess = "Dilation";
+                processImage("dilation");
+            });
+            denoiseASCMBtn.addEventListener("click", () => {
+                currentProcess = "Denoise ASCM";
+                processImage("denoiseASCM");
+            });
+            waveletBtn.addEventListener("click", () => {
+                const wt = document.getElementById("wavelet-type").value;
+                const wl = document.getElementById("wavelet-level").value;
+                currentProcess = `Wavelet Transform (${wt}, level ${wl})`;
+                processImage("wavelet", wt, wl);
+            });
+            gaussianBtn.addEventListener("click", () => {
+                currentProcess = `Gaussian Smooth (σ=${sigmaSlider.value})`;
+                processImage("gaussian", parseFloat(sigmaSlider.value));
+            });
+            /* Advanced ‑ toggle */
+            advancedBtn.addEventListener("click", () => {
+                advancedOptions.style.display =
+                    advancedOptions.style.display === "none" ? "block" : "none";
+            });
+
+            /* View, Download, Reset */
+            viewSlicesBtn.addEventListener("click", viewSlices);
+            downloadBtn.addEventListener("click", downloadResult);
+            resetBtn.addEventListener("click", resetApp);
+
+            /* ============  DTI  ============ */
+            dtiBtn.addEventListener("click", () => {
+                dtiInputs.style.display = dtiInputs.style.display === "none" ? "block" : "none";
+            });
+            bvecInput.addEventListener("change", () => {
+                bvecFile = bvecInput.files[0] || null;
+                bvecName.textContent = bvecFile ? bvecFile.name : "No file selected";
+            });
+            bvalInput.addEventListener("change", () => {
+                bvalFile = bvalInput.files[0] || null;
+                bvalName.textContent = bvalFile ? bvalFile.name : "No file selected";
+            });
+            runDtiBtn.addEventListener("click", runDtiReconstruction);
+        }
+
+        /* ============  FILE UPLOAD  ============ */
+        async function handleFileSelect(e) {
+            if (!e.target.files.length) return;
+            currentFile = e.target.files[0];
+            fileNameDisplay.textContent = currentFile.name;
+            showStatus("Uploading DWI file…", "processing");
+            try {
+                const formData = new FormData();
+                formData.append("file", currentFile);
+                const res = await fetch("/upload", { method: "POST", body: formData });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || "Upload failed");
+                showStatus("Upload successful!", "success");
+                currentFilePath = data.filepath; // store for later DTI
+            } catch (err) {
+                showStatus(`Error: ${err.message}`, "error");
+            }
+        }
+
+        /* ============  IMAGE PROCESSING  ============ */
+        async function processImage(processType, param1 = null, param2 = null) {
+            if (!currentFilePath) {
+                showStatus("Please upload a DWI file first", "error");
+                return;
+            }
+            showStatus(`${currentProcess} in progress…`, "processing");
+            try {
+                const params = { filepath: currentFilePath };
+                let endpoint = "";
+                switch (processType) {
+                    case "segment":
+                        endpoint = "/segment";
+                        break;
+                    case "denoise":
+                        endpoint = "/denoise";
+                        break;
+                    case "enhance":
+                        endpoint = "/enhance";
+                        break;
+                    case "sharpen":
+                        endpoint = "/enhance_with_sharpening";
+                        break;
+                    case "erosion":
+                        endpoint = "/erosion";
+                        break;
+                    case "dilation":
+                        endpoint = "/dilation";
+                        break;
+                    case "denoiseASCM":
+                        endpoint = "/denoise_ASCM";
+                        break;
+                    case "tissue_segmentation":          // ⬅️ 名称保持一致
+                    endpoint = "/tissue_segmentation";
+                        break;
+                    case "wavelet":
+                        endpoint = "/wavelet_transform";
+                        params.wavelet = param1;
+                        params.level = param2;
+                        break;
+                    case "gaussian":
+                        endpoint = "/gaussian_smooth";
+                        params.sigma = param1;
+                        break;
+                    default:
+                        throw new Error("Unknown process type");
+                }
+                const res = await fetch(endpoint, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(params),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || "Processing failed");
+                showProcessResult(processType, data);
+            } catch (err) {
+                showStatus(`Error: ${err.message}`, "error");
+            }
+        }
+        function showProcessResult(processType, data) {
+            showStatus(`${currentProcess} completed!`, "success");
+            resultInfo.innerHTML = `
+                <h4><i class="fas fa-info-circle"></i> Processing Details</h4>
+                <p><strong>Operation:</strong> ${currentProcess}</p>
+                <p><strong>File:</strong> ${currentFile.name}</p>
+                <p><strong>Parameters:</strong> ${getParamsText(processType, data)}</p>
+                <p><strong>Results saved in:</strong> ${data.results_dir}</p>
+                <p><strong>Timestamp:</strong> ${new Date().toLocaleString()}</p>
+            `;
+            if (data.preview_url) {
+                resultContainer.innerHTML = `<img id="result-image" src="${data.preview_url}" alt="DTI Preview" />`;
+                processedImageUrl = data.preview_url;
+            }
+            currentResultDir = data.result_dir;
+            outputFiles = data.output_files || {};
+        }
+        function getParamsText(processType, data) {
+            switch (processType) {
+                case "smooth":
+                case "gaussian":
+                    return `σ = ${data.sigma || sigmaSlider.value}`;
+                case "wavelet":
+                    return `Type ${data.wavelet || document.getElementById("wavelet-type").value}, Level ${data.level || document.getElementById("wavelet-level").value}`;
+                default:
+                    return "Default parameters";
+            }
+        }
+
+        /* ============  DTI RECONSTRUCTION  ============ */
+        async function runDtiReconstruction() {
+            if (!currentFilePath) {
+                showStatus("Upload DWI file first", "error");
+                return;
+            }
+            if (!bvecFile || !bvalFile) {
+                showStatus("Please select both .bvec and .bval files", "error");
+                return;
+            }
+            currentProcess = "DTI Reconstruction";
+            showStatus("DTI reconstruction in progress…", "processing");
+            try {
+                const formData = new FormData();
+                formData.append("dwi_filepath", currentFilePath);
+                formData.append("bvec_file", bvecFile);
+                formData.append("bval_file", bvalFile);
+                const res = await fetch("/dti_reconstruct", {
+                    method: "POST",
+                    body: formData,
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || "DTI failed");
+                // show result preview (data.preview_url)
+                showStatus("DTI reconstruction complete!", "success");
+                resultContainer.innerHTML = `<img id="result-image" src="${data.preview_url}" alt="DTI Preview" />`;
+                processedImageUrl = data.preview_url;
+                // update info
+                resultInfo.innerHTML = `
+                    <h4><i class="fas fa-info-circle"></i> DTI Reconstruction</h4>
+                    <p><strong>FA map:</strong> ${data.fa_map}</p>
+                    <p><strong>MD map:</strong> ${data.md_map}</p>
+                    <p><strong>RGB map:</strong> ${data.rgb_map}</p>
+                    <p><strong>Median radius:</strong> ${data.median_radius}</p>
+                    <p><strong>Numpass:</strong> ${data.numpass}</p>
+                    <p><strong>Timestamp:</strong> ${new Date().toLocaleString()}</p>
+                `;
+                // store for download/view slices
+                currentResultDir = data.result_dir;
+                outputFiles = data;
+            } catch (err) {
+                showStatus(`Error: ${err.message}`, "error");
+            }
+        }
+
+        /* ============  VIEW SLICES  ============ */
+        async function viewSlices() {
+            if (!currentResultDir) {
+                showStatus("Process an image first", "error");
+                return;
+            }
+            const filepath =
+                outputFiles.segmentation_result ||
+                outputFiles.enhanced_data ||
+                outputFiles.denoised_data ||
+                outputFiles.segmented_data ||
+                outputFiles.sharpened_data ||
+                outputFiles.wavelet_transformed ||
+                outputFiles.fa_map ||
+                null;
+            if (!filepath) {
+                showStatus("No output file available for mosaic", "error");
+                return;
+            }
+            showStatus("Generating slice mosaic…", "processing");
+            try {
+                const res = await fetch("/view_slices", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ filepath, result_dir: currentResultDir }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || "Failed");
+                if (data.mosaic_url) {
+                    resultContainer.innerHTML = `<img id="result-image" src="${data.mosaic_url}" alt="Slice mosaic" />`;
+                    showStatus("Slice mosaic generated", "success");
+                }
+            } catch (err) {
+                showStatus(`Error: ${err.message}`, "error");
+            }
+        }
+
+        /* ============  DOWNLOAD  ============ */
+        function downloadResult() {
+            if (!processedImageUrl) {
+                showStatus("No result to download", "error");
+                return;
+            }
+            const link = document.createElement("a");
+            link.href = processedImageUrl;
+            link.download = `processed_${currentFile.name.replace(/\.[^/.]+$/, "")}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showStatus("Download started", "success");
+        }
+
+        /* ============  RESET  ============ */
+        function resetApp() {
+            // Reset state
+            currentFile = null;
+            currentFilePath = null;
+            processedImageUrl = null;
+            currentProcess = "";
+            currentResultDir = null;
+            outputFiles = {};
+            bvecFile = null;
+            bvalFile = null;
+            // Reset DOM
+            fileInput.value = "";
+            bvecInput.value = "";
+            bvalInput.value = "";
+            fileNameDisplay.textContent = "No file selected";
+            bvecName.textContent = "No file selected";
+            bvalName.textContent = "No file selected";
+            statusDiv.className = "status";
+            statusDiv.textContent = "Ready to process medical images";
+            resultContainer.innerHTML =
+                '<div class="image-placeholder"><i class="fas fa-image"></i> Result will appear here</div>';
+            resultInfo.innerHTML =
+                '<h4><i class="fas fa-info-circle"></i> Processing Information</h4><p>No processing information available yet.</p>';
+            advancedOptions.style.display = "none";
+            dtiInputs.style.display = "none";
+        }
+    </script>
+</body>
+</html>
